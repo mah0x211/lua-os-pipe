@@ -32,7 +32,7 @@ create instance of pipe reader and writer.
 `pipe.reader` and `pipe.writer` instances have the following common methods.
 
 
-### enabled = p:nonblock( [enabled] ) `pipe.reader` methods
+### enabled = p:nonblock( [enabled] ) 
 
 gets or sets the `O_NONBLOCK` flag.
 
