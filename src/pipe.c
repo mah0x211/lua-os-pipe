@@ -181,7 +181,7 @@ static inline int nonblock_lua(lua_State *L, const char *tname) {
     }
 
     // got error
-    lua_pushboolean(L, 0);
+    lua_pushnil(L);
     lua_pushstring(L, strerror(errno));
     return 2;
 }
