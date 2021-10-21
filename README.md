@@ -1,12 +1,14 @@
 # lua-pipe
 
+[![test](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml/badge.svg)](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml)
+
 create descriptor pair for interprocess communication.
 
 
 ## Installation
 
 ```bash
-$ luarocks install pipe
+$ luarocks install mah0x211/pipe
 ```
 
 
@@ -32,9 +34,10 @@ create instance of pipe reader and writer.
 `pipe.reader` and `pipe.writer` instances have the following common methods.
 
 
-### enabled = p:nonblock( [enabled] ) 
+### enabled, err = p:nonblock( [enabled] ) 
 
 gets or sets the `O_NONBLOCK` flag.
+if an error occurs, return `nil` and `err`.
 
 **Parameters**
 
