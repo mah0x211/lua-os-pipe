@@ -1,5 +1,7 @@
 # lua-pipe
 
+[![test](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml/badge.svg)](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml)
+
 create descriptor pair for interprocess communication.
 
 
