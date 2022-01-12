@@ -1,7 +1,6 @@
 require('nosigpipe')
 local pipe = require('pipe')
 local testcase = require('testcase')
-local assert = require('assertex')
 
 function testcase.create_pipe()
     -- test that create pipe.reader and pipe.writer
