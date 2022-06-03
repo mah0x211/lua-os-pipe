@@ -90,10 +90,10 @@ function testcase.close()
 end
 
 function testcase.read_write()
-    local r, w, err = pipe()
+    local r, w, err = pipe(true)
     assert.is_nil(err)
-    r:nonblock(true)
-    w:nonblock(true)
+    assert.is_true(r:nonblock())
+    assert.is_true(w:nonblock())
 
     -- test that write data to writer
     local s = 'hello world!'
@@ -103,11 +103,23 @@ function testcase.read_write()
     assert.is_nil(err)
     assert.is_nil(again)
 
+    -- test that return EINVAL if empty-string
+    n, err, again = w:write('')
+    assert.is_nil(n)
+    assert.equal(err.type, errno.EINVAL)
+    assert.is_nil(again)
+
     -- test that read data from reader
     local data
     data, err, again = assert(r:read())
     assert.equal(data, s)
     assert.is_nil(err)
+    assert.is_nil(again)
+
+    -- test that returns EINVAL error if bufsize is less than 1
+    data, err, again = r:read(0)
+    assert.is_nil(data)
+    assert.equal(err.type, errno.EINVAL)
     assert.is_nil(again)
 
     -- test that returns `again=true` if the data has not arrived.
