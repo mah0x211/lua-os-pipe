@@ -27,6 +27,7 @@
 #include <unistd.h>
 // lua
 #include <lauxlib.h>
+#include <lua_errno.h>
 
 #define PIPE_READER_MT "pipe.reader"
 #define PIPE_WRITER_MT "pipe.writer"
@@ -54,7 +55,8 @@ static int write_lua(lua_State *L)
     // invalid length
     if (!len) {
         lua_pushnil(L);
-        lua_pushstring(L, strerror(EINVAL));
+        errno = EINVAL;
+        lua_errno_new(L, errno, "write");
         return 2;
     }
 
@@ -78,7 +80,7 @@ static int write_lua(lua_State *L)
         }
         // got error
         lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
+        lua_errno_new(L, errno, "write");
         return 2;
 
     default:
@@ -113,7 +115,7 @@ static int read_lua(lua_State *L)
             return 3;
         }
         // got error
-        lua_pushstring(L, strerror(errno));
+        lua_errno_new(L, errno, "read");
         return 2;
 
     default:
@@ -131,7 +133,7 @@ static inline int close_lua(lua_State *L, const char *tname)
 
         p->fd = -1;
         if (close(fd) == -1) {
-            lua_pushstring(L, strerror(errno));
+            lua_errno_new(L, errno, "close");
             return 1;
         }
     }
@@ -192,7 +194,7 @@ static inline int nonblock_lua(lua_State *L, const char *tname)
 
     // got error
     lua_pushnil(L);
-    lua_pushstring(L, strerror(errno));
+    lua_errno_new(L, errno, "fcntl");
     return 2;
 }
 
@@ -275,8 +277,7 @@ static int new_lua(lua_State *L)
     // got error
     lua_pushnil(L);
     lua_pushnil(L);
-    lua_pushstring(L, strerror(errno));
-
+    lua_errno_new(L, errno, "pipe");
     return 3;
 }
 
@@ -334,6 +335,8 @@ LUALIB_API int luaopen_pipe(lua_State *L)
         {"write",    write_lua          },
         {NULL,       NULL               }
     };
+
+    lua_errno_loadlib(L);
 
     createmt(L, PIPE_READER_MT, reader_mmethods, reader_methods);
     createmt(L, PIPE_WRITER_MT, writer_mmethods, writer_methods);
