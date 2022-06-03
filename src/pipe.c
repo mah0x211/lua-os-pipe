@@ -125,18 +125,22 @@ static int read_lua(lua_State *L)
 static inline int close_lua(lua_State *L, const char *tname)
 {
     pipe_fd_t *p = luaL_checkudata(L, 1, tname);
+    int fd       = p->fd;
 
-    if (p->fd != -1) {
-        int fd = p->fd;
-
-        p->fd = -1;
-        if (close(fd) == -1) {
-            lua_errno_new(L, errno, "close");
-            return 1;
-        }
+    if (fd == -1) {
+        lua_pushboolean(L, 1);
+        return 1;
     }
+    p->fd = -1;
 
-    return 0;
+    if (close(fd) == 0) {
+        lua_pushboolean(L, 1);
+        return 1;
+    }
+    // got error
+    lua_pushboolean(L, 0);
+    lua_errno_new(L, errno, "close");
+    return 2;
 }
 
 static int close_writer_lua(lua_State *L)
