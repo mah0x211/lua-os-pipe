@@ -39,7 +39,7 @@ create instance of pipe reader and writer.
 `pipe.reader` and `pipe.writer` instances have the following common methods.
 
 
-### enabled, err = p:nonblock( [enabled] ) 
+## enabled, err = p:nonblock( [enabled] ) 
 
 gets or sets the `O_NONBLOCK` flag.
 if an error occurs, return `nil` and `err`.
@@ -54,7 +54,7 @@ if an error occurs, return `nil` and `err`.
 - `err:error`: error object.
 
 
-### fd = p:fd()
+## fd = p:fd()
 
 get the file descriptor.
 
@@ -63,12 +63,13 @@ get the file descriptor.
 - `fd:integer`: file descriptor. returns `-1` after `p:close()` is called.
 
 
-### err = p:close()
+### ok, err = p:close()
 
 close the associated descriptor.
 
 **Returns**
 
+- `ok:boolean`: `true` on success.
 - `err:error`: error object.
 
 
@@ -181,21 +182,17 @@ assert(err == nil, err)
 -- read returns again (true)
 local s, err, again = r:read()
 print(dump({s, err, again}))
---[[ following string will be displayed.
-{
-    [3] = true
-}
-]]
+-- {
+--     [3] = true
+-- }
 
 -- read a message from writer
 w:write('hello')
 s, err, again = r:read()
 print(dump({s, err, again}))
---[[ following string will be displayed.
-{
-    [1] = "hello"
-}
-]]
+-- {
+--     [1] = "hello"
+-- }
 
 
 -- read a buffered message even writer is closed
@@ -203,29 +200,22 @@ w:write('world!')
 w:close()
 s, err, again = r:read()
 print(dump({s, err, again}))
---[[ following string will be displayed.
-{
-    [1] = "world!"
-}
-]]
+-- {
+--     [1] = "world!"
+-- }
 
 
 -- read returns nil after writer is closed
 s, err, again = r:read()
 print(dump({s, err, again}))
---[[ following string will be displayed.
-{}
-]]
+-- {}
 
 
 -- read returns err after reader is closed
 r:close()
 s, err, again = r:read()
 print(dump({s, err, again}))
---[[ following string will be displayed.
-{
-    [2] = "./example.lua:65: in main chunk: [EBADF:9][read] Bad file descriptor"
-}
-]]
-
+-- {
+--     [2] = "./example.lua:65: in main chunk: [EBADF:9][read] Bad file descriptor"
+-- }
 ```

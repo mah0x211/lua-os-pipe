@@ -76,7 +76,7 @@ function testcase.close()
         r,
         w,
     }) do
-        assert(not v:close())
+        assert(v:close())
         assert.equal(v:fd(), -1)
     end
 
@@ -85,7 +85,7 @@ function testcase.close()
         r,
         w,
     }) do
-        assert(not v:close())
+        assert(v:close())
     end
 end
 
