@@ -149,12 +149,13 @@ function testcase.read_write()
         assert.is_nil(again)
     end
 
-    -- test that returns all nil if write after closed by peer
+    -- test that returns EPIPE error if write after closed by peer
     r, w = pipe()
     r:close()
-    assert.empty({
-        w:write('hello'),
-    })
+    n, err, again = w:write('hello')
+    assert.is_nil(n)
+    assert.equal(err.type, errno.EPIPE)
+    assert.is_nil(again)
     w:close()
 
     -- test that returns all nil if read after closed by peer
