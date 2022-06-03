@@ -112,11 +112,9 @@ assert(err == nil, err)
 -- write a message
 local n, err, again = w:write('hello')
 print(dump({n, err, again}))
---[[ following string will be displayed.
-{
-    [1] = 5
-}
-]]
+-- {
+--     [1] = 5
+-- }
 
 -- write a message until an again becomes true
 repeat
@@ -124,24 +122,21 @@ repeat
     assert(err == nil, err)
 until again == true
 
-
 -- write returns nil after reader is closed
 r:close()
 n, err, again = w:write('hello')
 print(dump({n, err, again}))
---[[ following string will be displayed.
-{}
-]]
+-- {
+--     [2] = "./example.lua:29: in main chunk: [EPIPE:32][write] Broken pipe"
+-- }
 
 -- write returns err after writer is closed
 w:close()
 n, err, again = w:write('hello')
 print(dump({n, err, again}))
---[[ following string will be displayed.
-{
-    [2] = "Bad file descriptor"
-}
-]]
+-- {
+--     [2] = "./example.lua:39: in main chunk: [EBADF:9][write] Bad file descriptor"
+-- }
 ```
 
 
