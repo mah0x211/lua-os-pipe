@@ -32,6 +32,7 @@
 #define PIPE_READER_MT "pipe.reader"
 #define PIPE_WRITER_MT "pipe.writer"
 
+#define DEFAULT_RECVSIZE 4096
 
 typedef struct {
     int fd;
@@ -82,10 +83,21 @@ static int write_lua(lua_State *L)
 
 static int read_lua(lua_State *L)
 {
-    pipe_fd_t *p       = luaL_checkudata(L, 1, PIPE_READER_MT);
-    char buf[PIPE_BUF] = {0};
-    ssize_t rv         = read(p->fd, buf, PIPE_BUF);
+    pipe_fd_t *p    = luaL_checkudata(L, 1, PIPE_READER_MT);
+    lua_Integer len = lauxh_optinteger(L, 2, DEFAULT_RECVSIZE);
+    char *buf       = NULL;
+    ssize_t rv      = 0;
 
+    // invalid length
+    if (len <= 0) {
+        lua_pushnil(L);
+        errno = EINVAL;
+        lua_errno_new(L, errno, "read_lua");
+        return 2;
+    }
+
+    buf = lua_newuserdata(L, len);
+    rv  = read(p->fd, buf, (size_t)len);
     switch (rv) {
     case 0:
         // close by peer

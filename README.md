@@ -87,7 +87,7 @@ write a string to the associated descriptor.
 
 **Returns**
 
-- `n:integer`: number of bytes written, or `nil` if `write` syscall returned `0`.
+- `n:integer`: number of bytes written.
 - `err:error`: error object.
 - `again:boolean`: `nil`, or `true` if `errno` is `EAGAIN`, `EWOULDBLOCK` or `EINTR`.
 
@@ -149,15 +149,22 @@ print(dump({n, err, again}))
 `pipe.reader` instances has the following methods.
 
 
-### s, err, again = p:read()
+### s, err, again = p:read( [bufsize] )
 
-read `PIPE_BUF` bytes of data from the associated descriptor.
+read bytes of data from the associated descriptor.
+
+Parameters
+
+- `bufsize:integer`: number of bytes read (`default: 4096`).
 
 **Returns**
 
 - `s:string`: data read from associated descriptor, or `nil` if `read` syscall returned `0` or an error occurred.
 - `err:error`: error object.
 - `again:boolean`: nil or `true` if `errno` is `EAGAIN`, `EWOULDBLOCK` or `EINTR`.
+
+NOTE: all return values will be `nil` if the number of bytes read is `0`.
+
 
 **Usage**
 
