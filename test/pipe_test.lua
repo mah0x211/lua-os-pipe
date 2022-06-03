@@ -1,18 +1,19 @@
 require('nosigpipe')
-local pipe = require('pipe')
 local testcase = require('testcase')
+local errno = require('errno')
+local pipe = require('pipe')
 
 function testcase.create_pipe()
     -- test that create pipe.reader and pipe.writer
     local r, w, err = pipe()
-    assert(not err, err)
+    assert.is_nil(err)
     assert.match(tostring(r), '^pipe.reader:', false)
     assert.match(tostring(w), '^pipe.writer:', false)
 end
 
 function testcase.nonblock()
     local r, w, err = pipe()
-    assert(not err, err)
+    assert.is_nil(err)
 
     -- test that default false
     for _, v in ipairs({
@@ -55,7 +56,7 @@ end
 
 function testcase.fd()
     local r, w, err = pipe()
-    assert(not err, err)
+    assert.is_nil(err)
 
     -- test that returns fd
     for _, v in ipairs({
@@ -68,7 +69,7 @@ end
 
 function testcase.close()
     local r, w, err = pipe()
-    assert(not err, err)
+    assert.is_nil(err)
 
     -- test that close fd without error
     for _, v in ipairs({
@@ -90,29 +91,29 @@ end
 
 function testcase.read_write()
     local r, w, err = pipe()
-    assert(not err, err)
+    assert.is_nil(err)
     r:nonblock(true)
     w:nonblock(true)
 
-    -- luacheck: ignore err
-    -- luacheck: ignore again
     -- test that write data to writer
     local s = 'hello world!'
-    local n, err, again = w:write(s)
+    local n, again
+    n, err, again = assert(w:write(s))
     assert.equal(n, #s)
-    assert(not err, err)
-    assert(not again)
+    assert.is_nil(err)
+    assert.is_nil(again)
 
     -- test that read data from reader
-    local data, err, again = r:read()
+    local data
+    data, err, again = assert(r:read())
     assert.equal(data, s)
-    assert(not err, err)
-    assert(not again)
+    assert.is_nil(err)
+    assert.is_nil(again)
 
     -- test that returns `again=true` if the data has not arrived.
     data, err, again = r:read()
-    assert(not data)
-    assert(not err, err)
+    assert.is_nil(data)
+    assert.is_nil(err)
     assert.is_true(again)
 
     -- test that returns `again=true` when the buffer is full
@@ -120,7 +121,7 @@ function testcase.read_write()
         n, err, again = w:write(s)
         if again then
             assert.equal(n, 0)
-            assert(not err, err)
+            assert.is_nil(err)
             assert.is_true(again)
             break
         end
@@ -144,7 +145,7 @@ function testcase.read_write()
             data, err, again = w:write('hello')
         end
         assert.is_nil(data)
-        assert.match(err, 'Bad file')
+        assert.equal(err.type, errno.EBADF)
         assert.is_nil(again)
     end
 

@@ -1,6 +1,7 @@
 # lua-pipe
 
 [![test](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml/badge.svg)](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/mah0x211/lua-pipe/branch/master/graph/badge.svg)](https://codecov.io/gh/mah0x211/lua-pipe)
 
 create descriptor pair for interprocess communication.
 
@@ -10,6 +11,10 @@ create descriptor pair for interprocess communication.
 ```bash
 $ luarocks install mah0x211/pipe
 ```
+
+## Error Handling
+
+the functions/methods are return the error object created by https://github.com/mah0x211/lua-errno module.
 
 
 ## Creating pipe reader and writer
@@ -26,7 +31,7 @@ create instance of pipe reader and writer.
 
 - `r:pipe.reader`: instance of [pipe.reader](#pipe.reader-instance-methods).
 - `w:pipe.writer`: instance of [pipe.writer](#pipe.writer-instance-methods).
-- `err:string`: error string.
+- `err:error`: error object.
 
 
 ## Common methods
@@ -46,7 +51,7 @@ if an error occurs, return `nil` and `err`.
 **Returns**
 
 - `enabled:boolean`: if `enabled` parameter passed, its returns a previous status.
-- `err:string`: error string.
+- `err:error`: error object.
 
 
 ### fd = p:fd()
@@ -64,7 +69,7 @@ close the associated descriptor.
 
 **Returns**
 
-- `err:string`: error string.
+- `err:error`: error object.
 
 
 ## `pipe.writer` methods
@@ -83,7 +88,7 @@ write a string to the associated descriptor.
 **Returns**
 
 - `n:integer`: number of bytes written, or `nil` if `write` syscall returned `0`.
-- `err:string`: error string.
+- `err:error`: error object.
 - `again:boolean`: `nil`, or `true` if `errno` is `EAGAIN`, `EWOULDBLOCK` or `EINTR`.
 
 **NOTE**
@@ -151,7 +156,7 @@ read `PIPE_BUF` bytes of data from the associated descriptor.
 **Returns**
 
 - `s:string`: data read from associated descriptor, or `nil` if `read` syscall returned `0` or an error occurred.
-- `err:string`: error string.
+- `err:error`: error object.
 - `again:boolean`: nil or `true` if `errno` is `EAGAIN`, `EWOULDBLOCK` or `EINTR`.
 
 **Usage**
@@ -207,11 +212,12 @@ print(dump({s, err, again}))
 
 
 -- read returns err after reader is closed
+r:close()
 s, err, again = r:read()
 print(dump({s, err, again}))
 --[[ following string will be displayed.
 {
-    [2] = "Bad file descriptor"
+    [2] = "./example.lua:65: in main chunk: [EBADF:9][read] Bad file descriptor"
 }
 ]]
 

@@ -27,11 +27,13 @@
 #include <unistd.h>
 // lua
 #include <lauxlib.h>
+#include <lua_errno.h>
 
 #define PIPE_READER_MT "pipe.reader"
 #define PIPE_WRITER_MT "pipe.writer"
 
-static inline int optboolean(lua_State *L, int idx, int def) {
+static inline int optboolean(lua_State *L, int idx, int def)
+{
     if (lua_gettop(L) < idx) {
         return def;
     }
@@ -43,16 +45,18 @@ typedef struct {
     int fd;
 } pipe_fd_t;
 
-static int write_lua(lua_State *L) {
-    pipe_fd_t *p = luaL_checkudata(L, 1, PIPE_WRITER_MT);
-    size_t len = 0;
+static int write_lua(lua_State *L)
+{
+    pipe_fd_t *p    = luaL_checkudata(L, 1, PIPE_WRITER_MT);
+    size_t len      = 0;
     const char *buf = luaL_checklstring(L, 2, &len);
-    ssize_t rv = 0;
+    ssize_t rv      = 0;
 
     // invalid length
     if (!len) {
         lua_pushnil(L);
-        lua_pushstring(L, strerror(EINVAL));
+        errno = EINVAL;
+        lua_errno_new(L, errno, "write");
         return 2;
     }
 
@@ -76,7 +80,7 @@ static int write_lua(lua_State *L) {
         }
         // got error
         lua_pushnil(L);
-        lua_pushstring(L, strerror(errno));
+        lua_errno_new(L, errno, "write");
         return 2;
 
     default:
@@ -90,10 +94,11 @@ static int write_lua(lua_State *L) {
     }
 }
 
-static int read_lua(lua_State *L) {
-    pipe_fd_t *p = luaL_checkudata(L, 1, PIPE_READER_MT);
+static int read_lua(lua_State *L)
+{
+    pipe_fd_t *p       = luaL_checkudata(L, 1, PIPE_READER_MT);
     char buf[PIPE_BUF] = {0};
-    ssize_t rv = read(p->fd, buf, PIPE_BUF);
+    ssize_t rv         = read(p->fd, buf, PIPE_BUF);
 
     switch (rv) {
     case 0:
@@ -110,7 +115,7 @@ static int read_lua(lua_State *L) {
             return 3;
         }
         // got error
-        lua_pushstring(L, strerror(errno));
+        lua_errno_new(L, errno, "read");
         return 2;
 
     default:
@@ -119,7 +124,8 @@ static int read_lua(lua_State *L) {
     }
 }
 
-static inline int close_lua(lua_State *L, const char *tname) {
+static inline int close_lua(lua_State *L, const char *tname)
+{
     pipe_fd_t *p = luaL_checkudata(L, 1, tname);
 
     if (p->fd != -1) {
@@ -127,7 +133,7 @@ static inline int close_lua(lua_State *L, const char *tname) {
 
         p->fd = -1;
         if (close(fd) == -1) {
-            lua_pushstring(L, strerror(errno));
+            lua_errno_new(L, errno, "close");
             return 1;
         }
     }
@@ -135,33 +141,39 @@ static inline int close_lua(lua_State *L, const char *tname) {
     return 0;
 }
 
-static int close_writer_lua(lua_State *L) {
+static int close_writer_lua(lua_State *L)
+{
     return close_lua(L, PIPE_WRITER_MT);
 }
 
-static int close_reader_lua(lua_State *L) {
+static int close_reader_lua(lua_State *L)
+{
     return close_lua(L, PIPE_READER_MT);
 }
 
-static inline int fd_lua(lua_State *L, const char *tname) {
+static inline int fd_lua(lua_State *L, const char *tname)
+{
     pipe_fd_t *p = luaL_checkudata(L, 1, tname);
 
     lua_pushinteger(L, p->fd);
     return 1;
 }
 
-static int fd_writer_lua(lua_State *L) {
+static int fd_writer_lua(lua_State *L)
+{
     return fd_lua(L, PIPE_WRITER_MT);
 }
 
-static int fd_reader_lua(lua_State *L) {
+static int fd_reader_lua(lua_State *L)
+{
     return fd_lua(L, PIPE_READER_MT);
 }
 
-static inline int nonblock_lua(lua_State *L, const char *tname) {
+static inline int nonblock_lua(lua_State *L, const char *tname)
+{
     pipe_fd_t *p = luaL_checkudata(L, 1, tname);
-    int enabled = optboolean(L, 2, -1);
-    int flg = fcntl(p->fd, F_GETFL, 0);
+    int enabled  = optboolean(L, 2, -1);
+    int flg      = fcntl(p->fd, F_GETFL, 0);
 
     // got
     if (flg != -1) {
@@ -182,32 +194,38 @@ static inline int nonblock_lua(lua_State *L, const char *tname) {
 
     // got error
     lua_pushnil(L);
-    lua_pushstring(L, strerror(errno));
+    lua_errno_new(L, errno, "fcntl");
     return 2;
 }
 
-static int nonblock_writer_lua(lua_State *L) {
+static int nonblock_writer_lua(lua_State *L)
+{
     return nonblock_lua(L, PIPE_WRITER_MT);
 }
 
-static int nonblock_reader_lua(lua_State *L) {
+static int nonblock_reader_lua(lua_State *L)
+{
     return nonblock_lua(L, PIPE_READER_MT);
 }
 
-static inline int tostring_lua(lua_State *L, const char *tname) {
+static inline int tostring_lua(lua_State *L, const char *tname)
+{
     lua_pushfstring(L, "%s: %p", tname, lua_touserdata(L, 1));
     return 1;
 }
 
-static int tostring_writer_lua(lua_State *L) {
+static int tostring_writer_lua(lua_State *L)
+{
     return tostring_lua(L, PIPE_WRITER_MT);
 }
 
-static int tostring_reader_lua(lua_State *L) {
+static int tostring_reader_lua(lua_State *L)
+{
     return tostring_lua(L, PIPE_READER_MT);
 }
 
-static int gc_lua(lua_State *L) {
+static int gc_lua(lua_State *L)
+{
     pipe_fd_t *p = lua_touserdata(L, 1);
 
     if (p->fd != -1) {
@@ -217,7 +235,8 @@ static int gc_lua(lua_State *L) {
     return 0;
 }
 
-static inline int set_nonblock(int fds[2]) {
+static inline int set_nonblock(int fds[2])
+{
     int flg0 = fcntl(fds[0], F_GETFL, 0);
     int flg1 = fcntl(fds[1], F_GETFL, 0);
 
@@ -226,13 +245,15 @@ static inline int set_nonblock(int fds[2]) {
            fcntl(fds[1], F_SETFL, flg1 | O_NONBLOCK);
 }
 
-static inline int set_cloexec(int fds[2]) {
+static inline int set_cloexec(int fds[2])
+{
     return fcntl(fds[0], F_SETFD, FD_CLOEXEC) ||
            fcntl(fds[1], F_SETFD, FD_CLOEXEC);
 }
 
-static int new_lua(lua_State *L) {
-    int nonblock = optboolean(L, 1, 0);
+static int new_lua(lua_State *L)
+{
+    int nonblock      = optboolean(L, 1, 0);
     pipe_fd_t *reader = lua_newuserdata(L, sizeof(pipe_fd_t));
     pipe_fd_t *writer = lua_newuserdata(L, sizeof(pipe_fd_t));
     int fds[2];
@@ -256,14 +277,13 @@ static int new_lua(lua_State *L) {
     // got error
     lua_pushnil(L);
     lua_pushnil(L);
-    lua_pushstring(L, strerror(errno));
-
+    lua_errno_new(L, errno, "pipe");
     return 3;
 }
 
 static inline void createmt(lua_State *L, const char *tname,
-                            struct luaL_Reg *mmethods,
-                            struct luaL_Reg *methods) {
+                            struct luaL_Reg *mmethods, struct luaL_Reg *methods)
+{
     struct luaL_Reg *ptr = mmethods;
 
     // create new metatable of tname already exists
@@ -289,21 +309,34 @@ static inline void createmt(lua_State *L, const char *tname,
     lua_pop(L, 1);
 }
 
-LUALIB_API int luaopen_pipe(lua_State *L) {
+LUALIB_API int luaopen_pipe(lua_State *L)
+{
     struct luaL_Reg reader_mmethods[] = {
-        {"__gc", gc_lua}, {"__tostring", tostring_reader_lua}, {NULL, NULL}};
-    struct luaL_Reg reader_methods[] = {{"nonblock", nonblock_reader_lua},
-                                        {"fd", fd_reader_lua},
-                                        {"close", close_reader_lua},
-                                        {"read", read_lua},
-                                        {NULL, NULL}};
+        {"__gc",       gc_lua             },
+        {"__tostring", tostring_reader_lua},
+        {NULL,         NULL               }
+    };
+    struct luaL_Reg reader_methods[] = {
+        {"nonblock", nonblock_reader_lua},
+        {"fd",       fd_reader_lua      },
+        {"close",    close_reader_lua   },
+        {"read",     read_lua           },
+        {NULL,       NULL               }
+    };
     struct luaL_Reg writer_mmethods[] = {
-        {"__gc", gc_lua}, {"__tostring", tostring_writer_lua}, {NULL, NULL}};
-    struct luaL_Reg writer_methods[] = {{"nonblock", nonblock_writer_lua},
-                                        {"fd", fd_writer_lua},
-                                        {"close", close_writer_lua},
-                                        {"write", write_lua},
-                                        {NULL, NULL}};
+        {"__gc",       gc_lua             },
+        {"__tostring", tostring_writer_lua},
+        {NULL,         NULL               }
+    };
+    struct luaL_Reg writer_methods[] = {
+        {"nonblock", nonblock_writer_lua},
+        {"fd",       fd_writer_lua      },
+        {"close",    close_writer_lua   },
+        {"write",    write_lua          },
+        {NULL,       NULL               }
+    };
+
+    lua_errno_loadlib(L);
 
     createmt(L, PIPE_READER_MT, reader_mmethods, reader_methods);
     createmt(L, PIPE_WRITER_MT, writer_mmethods, writer_methods);
