@@ -32,14 +32,6 @@
 #define PIPE_READER_MT "pipe.reader"
 #define PIPE_WRITER_MT "pipe.writer"
 
-static inline int optboolean(lua_State *L, int idx, int def)
-{
-    if (lua_gettop(L) < idx) {
-        return def;
-    }
-    luaL_checktype(L, idx, LUA_TBOOLEAN);
-    return lua_toboolean(L, idx);
-}
 
 typedef struct {
     int fd;
@@ -49,7 +41,7 @@ static int write_lua(lua_State *L)
 {
     pipe_fd_t *p    = luaL_checkudata(L, 1, PIPE_WRITER_MT);
     size_t len      = 0;
-    const char *buf = luaL_checklstring(L, 2, &len);
+    const char *buf = lauxh_checklstring(L, 2, &len);
     ssize_t rv      = 0;
 
     // invalid length
@@ -62,10 +54,6 @@ static int write_lua(lua_State *L)
 
     rv = write(p->fd, buf, len);
     switch (rv) {
-    case 0:
-        // closed by peer
-        return 0;
-
     // got error
     case -1:
         if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
@@ -74,11 +62,9 @@ static int write_lua(lua_State *L)
             lua_pushnil(L);
             lua_pushboolean(L, 1);
             return 3;
-        } else if (errno == EPIPE) {
-            // closed by peer
-            return 0;
         }
         // got error
+        // closed by peer: EPIPE
         lua_pushnil(L);
         lua_errno_new(L, errno, "write");
         return 2;
@@ -169,6 +155,15 @@ static int fd_reader_lua(lua_State *L)
     return fd_lua(L, PIPE_READER_MT);
 }
 
+static inline int optboolean(lua_State *L, int idx, int def)
+{
+    if (lua_gettop(L) < idx) {
+        return def;
+    }
+    luaL_checktype(L, idx, LUA_TBOOLEAN);
+    return lua_toboolean(L, idx);
+}
+
 static inline int nonblock_lua(lua_State *L, const char *tname)
 {
     pipe_fd_t *p = luaL_checkudata(L, 1, tname);
@@ -253,7 +248,7 @@ static inline int set_cloexec(int fds[2])
 
 static int new_lua(lua_State *L)
 {
-    int nonblock      = optboolean(L, 1, 0);
+    int nonblock      = lauxh_optboolean(L, 1, 0);
     pipe_fd_t *reader = lua_newuserdata(L, sizeof(pipe_fd_t));
     pipe_fd_t *writer = lua_newuserdata(L, sizeof(pipe_fd_t));
     int fds[2];
@@ -290,9 +285,7 @@ static inline void createmt(lua_State *L, const char *tname,
     luaL_newmetatable(L, tname);
     // push metamethods
     while (ptr->name) {
-        lua_pushstring(L, ptr->name);
-        lua_pushcfunction(L, ptr->func);
-        lua_rawset(L, -3);
+        lauxh_pushfn2tbl(L, ptr->name, ptr->func);
         ptr++;
     }
     // push methods
@@ -300,9 +293,7 @@ static inline void createmt(lua_State *L, const char *tname,
     lua_pushstring(L, "__index");
     lua_newtable(L);
     while (ptr->name) {
-        lua_pushstring(L, ptr->name);
-        lua_pushcfunction(L, ptr->func);
-        lua_rawset(L, -3);
+        lauxh_pushfn2tbl(L, ptr->name, ptr->func);
         ptr++;
     }
     lua_rawset(L, -3);
