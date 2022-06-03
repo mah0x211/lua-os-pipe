@@ -14,12 +14,21 @@ dependencies = {
     "errno >= 0.3.0",
 }
 build = {
-    type = "builtin",
-    modules = {
-        pipe = {
-            sources = {
-                "src/pipe.c",
-            },
-        },
+    type = "make",
+    build_variables = {
+        PACKAGE = "pipe",
+        SRCDIR = "src",
+        CFLAGS = "$(CFLAGS)",
+        WARNINGS = "-Wall -Wno-trigraphs -Wmissing-field-initializers -Wreturn-type -Wmissing-braces -Wparentheses -Wno-switch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare",
+        CPPFLAGS = "-I$(LUA_INCDIR)",
+        LDFLAGS = "$(LIBFLAG)",
+        LIB_EXTENSION = "$(LIB_EXTENSION)",
+        PIPE_COVERAGE = "$(PIPE_COVERAGE)",
+    },
+    install_variables = {
+        PACKAGE = "pipe",
+        SRCDIR = "src",
+        INST_LIBDIR = "$(LIBDIR)",
+        LIB_EXTENSION = "$(LIB_EXTENSION)",
     },
 }
