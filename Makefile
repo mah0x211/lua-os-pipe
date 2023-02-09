@@ -1,6 +1,8 @@
-TARGET=$(PACKAGE).$(LIB_EXTENSION)
-SRCS=$(wildcard $(SRCDIR)/*.c)
+TARGET=pipe.$(LIB_EXTENSION)
+SRCS=$(wildcard src/*.c)
 OBJS=$(SRCS:.c=.o)
+GCDAS=$(OBJS:.o=.gcda)
+LUALIBS=$(wildcard lib/*.lua)
 INSTALL?=install
 
 ifdef PIPE_COVERAGE
@@ -20,4 +22,6 @@ $(TARGET): $(OBJS)
 install:
 	$(INSTALL) -d $(INST_LIBDIR)
 	$(INSTALL) $(TARGET) $(INST_LIBDIR)
-	rm -f $(OBJS) $(TARGET)
+	$(INSTALL) -d $(INST_LUADIR)/pipe
+	$(INSTALL) $(LUALIBS) $(INST_LUADIR)/pipe
+	rm -f $(OBJS) $(TARGET) $(GCDAS)
