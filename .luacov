@@ -1,0 +1,6 @@
+codefromstrings = false
+runreport = true
+deletestats = true
+modules = {
+    ["pipe.io"] = "lib/io.lua",
+}

@@ -17,11 +17,15 @@ $ luarocks install mah0x211/pipe
 the functions/methods are return the error object created by https://github.com/mah0x211/lua-errno module.
 
 
-## Creating pipe reader and writer
+## r, w, err = pipe( [nonblock] )
 
-### r, w, err = pipe( [nonblock] )
+create instances of `pipe.reader` and `pipe.writer`.
 
-create instance of pipe reader and writer.
+```lua
+local pipe = require('pipe')
+local r, w, err = pipeio()
+```
+
 
 **Parameters**
 
@@ -34,53 +38,9 @@ create instance of pipe reader and writer.
 - `err:error`: error object.
 
 
-## Common methods
+## n, err, again = writer:write( s )
 
-`pipe.reader` and `pipe.writer` instances have the following common methods.
-
-
-## enabled, err = p:nonblock( [enabled] ) 
-
-gets or sets the `O_NONBLOCK` flag.
-if an error occurs, return `nil` and `err`.
-
-**Parameters**
-
-- `enabled:boolean`: set `O_NONBLOCK` flag to enabled.
-
-**Returns**
-
-- `enabled:boolean`: if `enabled` parameter passed, its returns a previous status.
-- `err:error`: error object.
-
-
-## fd = p:fd()
-
-get the file descriptor.
-
-**Returns**
-
-- `fd:integer`: file descriptor. returns `-1` after `p:close()` is called.
-
-
-### ok, err = p:close()
-
-close the associated descriptor.
-
-**Returns**
-
-- `ok:boolean`: `true` on success.
-- `err:error`: error object.
-
-
-## `pipe.writer` methods
-
-`pipe.writer` instances has the following methods.
-
-
-### n, err, again = p:write( s )
-
-write a string to the associated descriptor.
+`pipe.writer` write a string to the associated descriptor.
 
 **Parameters**
 
@@ -100,11 +60,11 @@ write a string to the associated descriptor.
 **Usage**
 
 ```lua
-require('nosigpipe')
 -- you must install the nosigpipe module with `luarocks install nosigpipe`
 -- to prevent SIGPIPE signals.
-local dump = require('dump')
+require('nosigpipe')
 -- you must install dump module with `luarocks install dump`
+local dump = require('dump')
 local pipe = require('pipe')
 local r, w, err = pipe(true)
 assert(err == nil, err)
@@ -140,12 +100,7 @@ print(dump({n, err, again}))
 ```
 
 
-## `pipe.reader` methods
-
-`pipe.reader` instances has the following methods.
-
-
-### s, err, again = p:read( [bufsize] )
+## s, err, again = reader:read( [bufsize] )
 
 read bytes of data from the associated descriptor.
 
@@ -214,3 +169,131 @@ print(dump({s, err, again}))
 --     [2] = "./example.lua:65: in main chunk: [EBADF:9][read] Bad file descriptor"
 -- }
 ```
+
+
+## Common methods
+
+`pipe.reader` and `pipe.writer` instances have the following common methods.
+
+
+### enabled, err = p:nonblock( [enabled] ) 
+
+gets or sets the `O_NONBLOCK` flag.
+if an error occurs, return `nil` and `err`.
+
+**Parameters**
+
+- `enabled:boolean`: set `O_NONBLOCK` flag to enabled.
+
+**Returns**
+
+- `enabled:boolean`: if `enabled` parameter passed, its returns a previous status.
+- `err:error`: error object.
+
+
+### fd = p:fd()
+
+get the file descriptor.
+
+**Returns**
+
+- `fd:integer`: file descriptor. returns `-1` after `p:close()` is called.
+
+
+### ok, err = p:close()
+
+close the associated descriptor.
+
+**Returns**
+
+- `ok:boolean`: `true` on success.
+- `err:error`: error object.
+
+
+
+## `pipe.io` submodule
+
+`pipe.io` is a utility object that wraps `pipe.reader` and `pipe.writer` and provides a bi-directional interface. also, this interface uses [lua-gpoll](https://github.com/mah0x211/lua-gpoll) to implicitly handle non-blocking operations.
+
+## p, err = pipe.io( [nonblock] )
+
+create instance of `pipe.io`.
+
+```lua
+local pipeio = require('pipe.io')
+local p, err = pipeio(true)
+```
+
+**Parameters**
+
+- `nonblock:boolean`: set `O_NONBLOCK` flag to each descriptor.
+
+**Returns**
+
+- `p:pipe.io`: instance of `pipe.io`.
+- `err:error`: error object.
+
+
+## s, err, again = p:read( [bufsize [, msec]] )
+
+read bytes of data from the associated descriptor.
+
+**Parameters**
+
+- `bufsize:integer`: number of bytes read (`default: 4096`).
+- `msec:integer`: timeout milliseconds. if `nil`, wait forever.
+
+**Returns**
+
+- `s:string`: data read from associated descriptor, or `nil` if `read` syscall returned `0` or an error occurred.
+- `err:error`: error object.
+- `timeout:boolean`: `true` on timed-out.
+
+NOTE: all return values will be `nil` if the number of bytes read is `0`.
+
+
+## n, err, again = p:write( s [, msec] )
+
+write a string to the associated descriptor.
+
+**Parameters**
+
+- `s:string`: string data.
+- `msec:integer`: timeout milliseconds. if `nil`, wait forever.
+
+**Returns**
+
+- `n:integer`: number of bytes written.
+- `err:error`: error object.
+- `timeout:boolean`: `true` on timed-out.
+
+
+## ok, err = p:closerd()
+
+close the `pipe.reader`.
+
+**Returns**
+
+- `ok:boolean`: `true` on success.
+- `err:error`: error object.
+
+
+## ok, err = p:closewr()
+
+close the `pipe.writer`.
+
+**Returns**
+
+- `ok:boolean`: `true` on success.
+- `err:error`: error object.
+
+
+## ok, err = p:close()
+
+close both `pipe.reader` and `pipe.writer`.
+
+**Returns**
+
+- `ok:boolean`: `true` on success.
+- `err:error`: error object.
+
