@@ -52,12 +52,10 @@ jobs:
         sudo apt install lcov -y
         luarocks install testcase
         luarocks install luacov
-        luarocks install nosigpipe
-        luarocks install clock
     -
       name: Install
       run: |
-        luarocks make PIPE_COVERAGE=1
+        luarocks make PIPE_COVERAGE=1 rockspecs/os-pipe-scm-1.rockspec
     -
       name: Run Test
       run: |
@@ -72,4 +70,3 @@ jobs:
       with:
         files: ./luacov.report.out, ./coverage/lcov.info
         flags: unittests
-        verbose: true

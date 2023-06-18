@@ -1,7 +1,7 @@
-# lua-pipe
+# lua-os-pipe
 
-[![test](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml/badge.svg)](https://github.com/mah0x211/lua-pipe/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/mah0x211/lua-pipe/branch/master/graph/badge.svg)](https://codecov.io/gh/mah0x211/lua-pipe)
+[![test](https://github.com/mah0x211/lua-os-pipe/actions/workflows/test.yml/badge.svg)](https://github.com/mah0x211/lua-os-pipe/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/mah0x211/lua-os-pipe/branch/master/graph/badge.svg)](https://codecov.io/gh/mah0x211/lua-os-pipe)
 
 create descriptor pair for interprocess communication.
 
@@ -9,7 +9,7 @@ create descriptor pair for interprocess communication.
 ## Installation
 
 ```bash
-$ luarocks install mah0x211/pipe
+$ luarocks install os-pipe
 ```
 
 ## Error Handling
@@ -19,11 +19,11 @@ the functions/methods are return the error object created by https://github.com/
 
 ## r, w, err = pipe( [nonblock] )
 
-create instances of `pipe.reader` and `pipe.writer`.
+create instances of `os.pipe.reader` and `os.pipe.writer`.
 
 ```lua
-local pipe = require('pipe')
-local r, w, err = pipeio()
+local pipe = require('os.pipe')
+local r, w, err = pipe()
 ```
 
 
@@ -33,14 +33,14 @@ local r, w, err = pipeio()
 
 **Returns**
 
-- `r:pipe.reader`: instance of [pipe.reader](#pipe.reader-instance-methods).
-- `w:pipe.writer`: instance of [pipe.writer](#pipe.writer-instance-methods).
+- `r:os.pipe.reader`: instance of `os.pipe.reader`.
+- `w:os.pipe.writer`: instance of `os.pipe.writer`.
 - `err:error`: error object.
 
 
-## n, err, again = writer:write( s )
+## n, err, again = os.pipe.writer:write( s )
 
-`pipe.writer` write a string to the associated descriptor.
+`os.pipe.writer` write a string to the associated descriptor.
 
 **Parameters**
 
@@ -65,7 +65,7 @@ local r, w, err = pipeio()
 require('nosigpipe')
 -- you must install dump module with `luarocks install dump`
 local dump = require('dump')
-local pipe = require('pipe')
+local pipe = require('os.pipe')
 local r, w, err = pipe(true)
 assert(err == nil, err)
 
@@ -100,7 +100,7 @@ print(dump({n, err, again}))
 ```
 
 
-## s, err, again = reader:read( [bufsize] )
+## s, err, again = os.pipe.reader:read( [bufsize] )
 
 read bytes of data from the associated descriptor.
 
@@ -125,7 +125,7 @@ require('nosigpipe')
 -- to prevent SIGPIPE signals.
 local dump = require('dump')
 -- you must install dump module with `luarocks install dump`
-local pipe = require('pipe')
+local pipe = require('os.pipe')
 local r, w, err = pipe(true)
 assert(err == nil, err)
 
@@ -173,12 +173,14 @@ print(dump({s, err, again}))
 
 ## Common methods
 
-`pipe.reader` and `pipe.writer` instances have the following common methods.
+`os.pipe.reader` and `os.pipe.writer` instances have the following common methods.
 
 
-### enabled, err = p:nonblock( [enabled] ) 
+### gets or sets the `O_NONBLOCK` flag.
 
-gets or sets the `O_NONBLOCK` flag.
+- enabled, err = os.pipe.reader:nonblock( [enabled] ) 
+- enabled, err = os.pipe.writer:nonblock( [enabled] ) 
+
 if an error occurs, return `nil` and `err`.
 
 **Parameters**
@@ -191,18 +193,21 @@ if an error occurs, return `nil` and `err`.
 - `err:error`: error object.
 
 
-### fd = p:fd()
+### get the file descriptor.
 
-get the file descriptor.
+- fd = os.pipe.reader:fd()
+- fd = os.pipe.writer:fd()
+
 
 **Returns**
 
 - `fd:integer`: file descriptor. returns `-1` after `p:close()` is called.
 
 
-### ok, err = p:close()
+### close the associated descriptor.
 
-close the associated descriptor.
+- ok, err = os.pipe.reader:close()
+- ok, err = os.pipe.writer:close()
 
 **Returns**
 
@@ -210,17 +215,16 @@ close the associated descriptor.
 - `err:error`: error object.
 
 
+## `os.pipe.io` submodule
 
-## `pipe.io` submodule
+`os.pipe.io` is a utility object that wraps `os.pipe.reader` and `os.pipe.writer` and provides a bi-directional interface. also, this interface uses [lua-gpoll](https://github.com/mah0x211/lua-gpoll) to implicitly handle non-blocking operations.
 
-`pipe.io` is a utility object that wraps `pipe.reader` and `pipe.writer` and provides a bi-directional interface. also, this interface uses [lua-gpoll](https://github.com/mah0x211/lua-gpoll) to implicitly handle non-blocking operations.
+## p, err = os.pipe.io( [nonblock] )
 
-## p, err = pipe.io( [nonblock] )
-
-create instance of `pipe.io`.
+create instance of `os.pipe.io`.
 
 ```lua
-local pipeio = require('pipe.io')
+local pipeio = require('os.pipe.io')
 local p, err = pipeio(true)
 ```
 
@@ -230,11 +234,11 @@ local p, err = pipeio(true)
 
 **Returns**
 
-- `p:pipe.io`: instance of `pipe.io`.
+- `p:pipe.io`: instance of `os.pipe.io`.
 - `err:error`: error object.
 
 
-## s, err, again = p:read( [bufsize [, msec]] )
+## s, err, again = os.pipe.io:read( [bufsize [, msec]] )
 
 read bytes of data from the associated descriptor.
 
@@ -252,7 +256,7 @@ read bytes of data from the associated descriptor.
 NOTE: all return values will be `nil` if the number of bytes read is `0`.
 
 
-## n, err, again = p:write( s [, msec] )
+## n, err, again = os.pipe.io:write( s [, msec] )
 
 write a string to the associated descriptor.
 
@@ -268,19 +272,9 @@ write a string to the associated descriptor.
 - `timeout:boolean`: `true` on timed-out.
 
 
-## ok, err = p:closerd()
+## ok, err = os.pipe.io:closerd()
 
-close the `pipe.reader`.
-
-**Returns**
-
-- `ok:boolean`: `true` on success.
-- `err:error`: error object.
-
-
-## ok, err = p:closewr()
-
-close the `pipe.writer`.
+close the `os.pipe.reader`.
 
 **Returns**
 
@@ -288,9 +282,19 @@ close the `pipe.writer`.
 - `err:error`: error object.
 
 
-## ok, err = p:close()
+## ok, err = os.pipe.io:closewr()
 
-close both `pipe.reader` and `pipe.writer`.
+close the `os.pipe.writer`.
+
+**Returns**
+
+- `ok:boolean`: `true` on success.
+- `err:error`: error object.
+
+
+## ok, err = os.pipe.io:close()
+
+close both `os.pipe.reader` and `os.pipe.writer`.
 
 **Returns**
 

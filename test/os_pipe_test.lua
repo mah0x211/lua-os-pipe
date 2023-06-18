@@ -1,14 +1,13 @@
-require('nosigpipe')
 local testcase = require('testcase')
 local errno = require('errno')
-local pipe = require('pipe')
+local pipe = require('os.pipe')
 
 function testcase.create_pipe()
     -- test that create pipe.reader and pipe.writer
     local r, w, err = pipe()
     assert.is_nil(err)
-    assert.match(tostring(r), '^pipe.reader:', false)
-    assert.match(tostring(w), '^pipe.writer:', false)
+    assert.match(tostring(r), '^os%.pipe%.reader:', false)
+    assert.match(tostring(w), '^os%.pipe%.writer:', false)
 end
 
 function testcase.nonblock()
