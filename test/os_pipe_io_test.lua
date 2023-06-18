@@ -1,17 +1,17 @@
 require('luacov')
 local testcase = require('testcase')
-local pipeio = require('pipe.io')
-local gettime = require('clock').gettime
+local gettime = require('testcase.timer').nanotime
 local errno = require('errno')
+local pipeio = require('os.pipe.io')
 
 function testcase.new()
     -- test that create new pipe
     local p = assert(pipeio())
-    assert.match(p, '^pipe%.io: ', false)
+    assert.match(p, '^os%.pipe%.io: ', false)
 
     -- test that create new pipe with nonblock option
     p = assert(pipeio(true))
-    assert.match(p, '^pipe%.io: ', false)
+    assert.match(p, '^os%.pipe%.io: ', false)
 
     -- test that throws an error if nonblock argument is invalid
     local err = assert.throws(pipeio, {})

@@ -1,11 +1,11 @@
-package = "pipe"
+package = "os-pipe"
 version = "scm-1"
 source = {
-    url = "git+https://github.com/mah0x211/lua-pipe.git",
+    url = "git+https://github.com/mah0x211/lua-os-pipe.git",
 }
 description = {
     summary = "create descriptor pair for interprocess communication.",
-    homepage = "https://github.com/mah0x211/lua-pipe",
+    homepage = "https://github.com/mah0x211/lua-os-pipe",
     license = "MIT/X11",
     maintainer = "Masatoshi Fukunaga",
 }
@@ -27,7 +27,7 @@ build = {
     },
     install_variables = {
         LIB_EXTENSION = "$(LIB_EXTENSION)",
-        INST_LIBDIR = "$(LIBDIR)",
+        INST_LIBDIR = "$(LIBDIR)/os/",
         INST_LUADIR = "$(LUADIR)",
     },
 }

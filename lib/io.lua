@@ -20,7 +20,7 @@
 -- THE SOFTWARE.
 --
 local sub = string.sub
-local pipe = require('pipe')
+local pipe = require('os.pipe')
 local wait_readable = require('gpoll').wait_readable
 local wait_writable = require('gpoll').wait_writable
 local unwait_readable = require('gpoll').unwait_readable

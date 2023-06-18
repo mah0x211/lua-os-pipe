@@ -29,8 +29,8 @@
 #include <lauxlib.h>
 #include <lua_errno.h>
 
-#define PIPE_READER_MT "pipe.reader"
-#define PIPE_WRITER_MT "pipe.writer"
+#define PIPE_READER_MT "os.pipe.reader"
+#define PIPE_WRITER_MT "os.pipe.writer"
 
 #define DEFAULT_RECVSIZE 4096
 
@@ -316,7 +316,7 @@ static inline void createmt(lua_State *L, const char *tname,
     lua_pop(L, 1);
 }
 
-LUALIB_API int luaopen_pipe(lua_State *L)
+LUALIB_API int luaopen_os_pipe(lua_State *L)
 {
     struct luaL_Reg reader_mmethods[] = {
         {"__gc",       gc_lua             },
