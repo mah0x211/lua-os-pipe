@@ -21,14 +21,21 @@
 --
 local sub = string.sub
 local pipe = require('os.pipe')
-local wait_readable = require('gpoll').wait_readable
-local wait_writable = require('gpoll').wait_writable
-local unwait_readable = require('gpoll').unwait_readable
-local unwait_writable = require('gpoll').unwait_writable
+local poll = require('gpoll')
+local pollable = poll.pollable
+local new_readable_event = poll.new_readable_event
+local new_writable_event = poll.new_writable_event
+local dispose_event = poll.dispose_event
+local wait_event = poll.wait_event
+local iowait = require('io.wait')
+local iowait_readable = iowait.readable
+local iowait_writable = iowait.writable
 
 --- @class pipe.io
 --- @field reader pipe.reader
 --- @field writer pipe.writer
+--- @field readable_evid any
+--- @field writable_evid any
 local PipeIO = {}
 
 --- init
@@ -44,6 +51,74 @@ function PipeIO:init(nonblock)
     self.reader = reader
     self.writer = writer
     return self
+end
+
+--- wait_readable
+--- @private
+--- @param msec? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function PipeIO:wait_readable(msec)
+    local evid = self.readable_evid
+    if not evid then
+        if not pollable() then
+            return iowait_readable(self.reader:fd(), msec)
+        end
+
+        local err
+        evid, err = new_readable_event(self.reader:fd())
+        if not evid then
+            return false, err
+        end
+        self.readable_evid = evid
+    end
+
+    -- wait until readable
+    return wait_event(evid, msec)
+end
+
+--- unwait_readable
+--- @private
+function PipeIO:unwait_readable()
+    if self.readable_evid then
+        dispose_event(self.readable_evid)
+        self.readable_evid = nil
+    end
+end
+
+--- wait_writable
+--- @private
+--- @param msec? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function PipeIO:wait_writable(msec)
+    local evid = self.writable_evid
+    if not evid then
+        if not pollable() then
+            return iowait_writable(self.writer:fd(), msec)
+        end
+
+        local err
+        evid, err = new_writable_event(self.writer:fd())
+        if not evid then
+            return false, err
+        end
+        self.writable_evid = evid
+    end
+
+    -- wait until writable
+    return wait_event(evid, msec)
+end
+
+--- unwait_writable
+--- @private
+function PipeIO:unwait_writable()
+    if self.writable_evid then
+        dispose_event(self.writable_evid)
+        self.writable_evid = nil
+    end
 end
 
 --- read
@@ -62,7 +137,7 @@ function PipeIO:read(bufsize, msec)
     local ok, timeout
     repeat
         -- wait until readable
-        ok, err, timeout = wait_readable(reader:fd(), msec)
+        ok, err, timeout = self:wait_readable(msec)
         if ok then
             str, err, again = reader:read()
         end
@@ -94,7 +169,7 @@ function PipeIO:write(str, msec)
         end
 
         -- wait until writable
-        ok, err, timeout = wait_writable(writer:fd(), msec)
+        ok, err, timeout = self:wait_writable(msec)
         if ok then
             len, err, again = writer:write(str)
         end
@@ -111,7 +186,7 @@ function PipeIO:closerd()
     if fd == -1 then
         return true
     end
-    unwait_readable(fd)
+    self:unwait_readable()
     return self.reader:close()
 end
 
@@ -123,7 +198,7 @@ function PipeIO:closewr()
     if fd == -1 then
         return true
     end
-    unwait_writable(fd)
+    self:unwait_writable()
     return self.writer:close()
 end
 
