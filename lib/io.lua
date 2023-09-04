@@ -21,6 +21,9 @@
 --
 local sub = string.sub
 local pipe = require('os.pipe')
+local iowait_readable = require('io.wait').readable
+local iowait_writable = require('io.wait').writable
+local pollable = require('gpoll').pollable
 local wait_readable = require('gpoll').wait_readable
 local wait_writable = require('gpoll').wait_writable
 local unwait_readable = require('gpoll').unwait_readable
@@ -46,6 +49,48 @@ function PipeIO:init(nonblock)
     return self
 end
 
+--- wait_readable
+--- @private
+--- @param msec? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function PipeIO:wait_readable(msec)
+    if pollable() then
+        return wait_readable(self.reader:fd(), msec)
+    end
+    return iowait_readable(self.reader:fd(), msec)
+end
+
+--- unwait_readable
+--- @private
+function PipeIO:unwait_readable()
+    if pollable() then
+        unwait_readable(self.reader:fd())
+    end
+end
+
+--- wait_writable
+--- @private
+--- @param msec? integer
+--- @return boolean ok
+--- @return any err
+--- @return boolean? timeout
+function PipeIO:wait_writable(msec)
+    if pollable() then
+        return wait_writable(self.writer:fd(), msec)
+    end
+    return iowait_writable(self.writer:fd(), msec)
+end
+
+--- unwait_writable
+--- @private
+function PipeIO:unwait_writable()
+    if pollable() then
+        unwait_writable(self.writer:fd())
+    end
+end
+
 --- read
 --- @param bufsize? integer
 --- @param msec? integer
@@ -62,7 +107,7 @@ function PipeIO:read(bufsize, msec)
     local ok, timeout
     repeat
         -- wait until readable
-        ok, err, timeout = wait_readable(reader:fd(), msec)
+        ok, err, timeout = self:wait_readable(msec)
         if ok then
             str, err, again = reader:read()
         end
@@ -94,7 +139,7 @@ function PipeIO:write(str, msec)
         end
 
         -- wait until writable
-        ok, err, timeout = wait_writable(writer:fd(), msec)
+        ok, err, timeout = self:wait_writable(msec)
         if ok then
             len, err, again = writer:write(str)
         end
@@ -111,7 +156,7 @@ function PipeIO:closerd()
     if fd == -1 then
         return true
     end
-    unwait_readable(fd)
+    self:unwait_readable()
     return self.reader:close()
 end
 
@@ -123,7 +168,7 @@ function PipeIO:closewr()
     if fd == -1 then
         return true
     end
-    unwait_writable(fd)
+    self:unwait_writable()
     return self.writer:close()
 end
 
