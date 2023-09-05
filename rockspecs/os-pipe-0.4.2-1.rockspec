@@ -13,8 +13,8 @@ description = {
 dependencies = {
     "lua >= 5.1",
     "errno >= 0.3.0",
-    "gpoll >= 0.2.0",
-    "io-wait >= 0.2.0",
+    "gpoll ~> 0.6",
+    "io-wait ~> 0.2",
     "metamodule >= 0.4.0",
 }
 build = {
