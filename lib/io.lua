@@ -21,13 +21,13 @@
 --
 local sub = string.sub
 local pipe = require('os.pipe')
-local iowait_readable = require('io.wait').readable
-local iowait_writable = require('io.wait').writable
+local io_wait_readable = require('io.wait').readable
+local io_wait_writable = require('io.wait').writable
 local pollable = require('gpoll').pollable
-local wait_readable = require('gpoll').wait_readable
-local wait_writable = require('gpoll').wait_writable
-local unwait_readable = require('gpoll').unwait_readable
-local unwait_writable = require('gpoll').unwait_writable
+local poll_wait_readable = require('gpoll').wait_readable
+local poll_wait_writable = require('gpoll').wait_writable
+local poll_unwait_readable = require('gpoll').unwait_readable
+local poll_unwait_writable = require('gpoll').unwait_writable
 
 --- @class pipe.io
 --- @field reader pipe.reader
@@ -51,53 +51,53 @@ end
 
 --- wait_readable
 --- @private
---- @param msec? integer
+--- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function PipeIO:wait_readable(msec)
+function PipeIO:wait_readable(sec)
     if pollable() then
-        return wait_readable(self.reader:fd(), msec)
+        return poll_wait_readable(self.reader:fd(), sec)
     end
-    return iowait_readable(self.reader:fd(), msec)
+    return io_wait_readable(self.reader:fd(), sec)
 end
 
 --- unwait_readable
 --- @private
 function PipeIO:unwait_readable()
     if pollable() then
-        unwait_readable(self.reader:fd())
+        poll_unwait_readable(self.reader:fd())
     end
 end
 
 --- wait_writable
 --- @private
---- @param msec? integer
+--- @param sec? number
 --- @return boolean ok
 --- @return any err
 --- @return boolean? timeout
-function PipeIO:wait_writable(msec)
+function PipeIO:wait_writable(sec)
     if pollable() then
-        return wait_writable(self.writer:fd(), msec)
+        return poll_wait_writable(self.writer:fd(), sec)
     end
-    return iowait_writable(self.writer:fd(), msec)
+    return io_wait_writable(self.writer:fd(), sec)
 end
 
 --- unwait_writable
 --- @private
 function PipeIO:unwait_writable()
     if pollable() then
-        unwait_writable(self.writer:fd())
+        poll_unwait_writable(self.writer:fd())
     end
 end
 
 --- read
 --- @param bufsize? integer
---- @param msec? integer
+--- @param sec? number
 --- @return string str
 --- @return any err
 --- @return boolean? timeout
-function PipeIO:read(bufsize, msec)
+function PipeIO:read(bufsize, sec)
     local str, err, again = self.reader:read(bufsize)
     if not again then
         return str, err
@@ -107,7 +107,7 @@ function PipeIO:read(bufsize, msec)
     local ok, timeout
     repeat
         -- wait until readable
-        ok, err, timeout = self:wait_readable(msec)
+        ok, err, timeout = self:wait_readable(sec)
         if ok then
             str, err, again = reader:read()
         end
@@ -118,11 +118,11 @@ end
 
 --- write
 --- @param str string
---- @param msec? integer
+--- @param sec? number
 --- @return integer len
 --- @return any err
 --- @return boolean? timeout
-function PipeIO:write(str, msec)
+function PipeIO:write(str, sec)
     local len, err, again = self.writer:write(str)
     if not again then
         return len, err
@@ -139,7 +139,7 @@ function PipeIO:write(str, msec)
         end
 
         -- wait until writable
-        ok, err, timeout = self:wait_writable(msec)
+        ok, err, timeout = self:wait_writable(sec)
         if ok then
             len, err, again = writer:write(str)
         end

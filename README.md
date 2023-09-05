@@ -238,14 +238,14 @@ local p, err = pipeio(true)
 - `err:error`: error object.
 
 
-## s, err, again = os.pipe.io:read( [bufsize [, msec]] )
+## s, err, again = os.pipe.io:read( [bufsize [, sec]] )
 
 read bytes of data from the associated descriptor.
 
 **Parameters**
 
 - `bufsize:integer`: number of bytes read (`default: 4096`).
-- `msec:integer`: timeout milliseconds. if `nil`, wait forever.
+- `sec:number`: timeout seconds. if `nil` or `<0`, wait forever.
 
 **Returns**
 
@@ -256,14 +256,14 @@ read bytes of data from the associated descriptor.
 NOTE: all return values will be `nil` if the number of bytes read is `0`.
 
 
-## n, err, again = os.pipe.io:write( s [, msec] )
+## n, err, again = os.pipe.io:write( s [, sec] )
 
 write a string to the associated descriptor.
 
 **Parameters**
 
 - `s:string`: string data.
-- `msec:integer`: timeout milliseconds. if `nil`, wait forever.
+- `sec:number`: timeout seconds. if `nil` or `<0`, wait forever.
 
 **Returns**
 

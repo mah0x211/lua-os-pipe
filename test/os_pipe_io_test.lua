@@ -23,7 +23,7 @@ function testcase.read_write_nonblock()
 
     -- test that return again=true if no data available
     local t = gettime()
-    local s, err, again = p:read(nil, 50)
+    local s, err, again = p:read(nil, 0.05)
     t = gettime() - t
     assert.is_nil(s)
     assert.is_nil(err)
@@ -43,7 +43,7 @@ function testcase.read_write_nonblock()
     -- test that return again=true if no write buffer available
     while true do
         t = gettime()
-        n, err, again = p:write(msg, 50)
+        n, err, again = p:write(msg, 0.05)
         t = gettime() - t
         if n ~= #msg then
             assert.is_nil(err)
