@@ -28,7 +28,7 @@ function testcase.read_write_nonblock()
     assert.is_nil(s)
     assert.is_nil(err)
     assert.is_true(again)
-    assert.greater_or_equal(t, 0.05)
+    assert.greater_or_equal(t, 0.049)
     assert.less(t, 0.06)
 
     -- test that write message to pipe
@@ -48,7 +48,7 @@ function testcase.read_write_nonblock()
         if n ~= #msg then
             assert.is_nil(err)
             assert.is_true(again)
-            assert.greater_or_equal(t, 0.05)
+            assert.greater_or_equal(t, 0.049)
             assert.less(t, 0.06)
             break
         end

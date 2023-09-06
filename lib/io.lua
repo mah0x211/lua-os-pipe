@@ -20,6 +20,20 @@
 -- THE SOFTWARE.
 --
 local sub = string.sub
+local type = type
+
+--- @class os.pipe.reader
+--- @field fd fun(self:os.pipe.reader):integer
+--- @field nonblock fun(self:os.pipe.reader, nonblock:boolean?):(ok: boolean, err: any)
+--- @field close fun(self:os.pipe.reader):(ok: boolean, err: any)
+--- @field read fun(self:os.pipe.reader, bufsize: integer?):(s: string?, err: any, again: boolean)
+--- @class os.pipe.writer
+--- @field fd fun(self:os.pipe.writer):integer
+--- @field nonblock fun(self:os.pipe.writer, nonblock:boolean):(ok: boolean, err: any)
+--- @field close fun(self:os.pipe.writer):(ok: boolean, err: any)
+--- @field write fun(self:os.pipe.writer, s: string):(len: integer?, err: any, again: boolean)
+
+--- @type fun(nonblock: boolean):(r: os.pipe.reader, w:os.pipe.writer, err:any)
 local pipe = require('os.pipe')
 local io_wait_readable = require('io.wait').readable
 local io_wait_writable = require('io.wait').writable
@@ -29,9 +43,26 @@ local poll_wait_writable = require('gpoll').wait_writable
 local poll_unwait_readable = require('gpoll').unwait_readable
 local poll_unwait_writable = require('gpoll').unwait_writable
 
+--- @class time.clock.deadline
+--- @field time fun(self:time.clock.deadline):number
+--- @field remain fun(self:time.clock.deadline):number
+
+--- @type fun(duration: number):(time.clock.deadline, number)
+local new_deadline = require('time.clock.deadline').new
+
+local INF_POS = math.huge
+local INF_NEG = -INF_POS
+
+--- is_finite returns true if x is finite number
+--- @param x number
+--- @return boolean
+local function is_finite(x)
+    return type(x) == 'number' and (x < INF_POS and x >= INF_NEG)
+end
+
 --- @class pipe.io
---- @field reader pipe.reader
---- @field writer pipe.writer
+--- @field reader os.pipe.reader
+--- @field writer os.pipe.writer
 local PipeIO = {}
 
 --- init
@@ -98,6 +129,9 @@ end
 --- @return any err
 --- @return boolean? timeout
 function PipeIO:read(bufsize, sec)
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
+
+    local deadline = sec and new_deadline(sec)
     local str, err, again = self.reader:read(bufsize)
     if not again then
         return str, err
@@ -105,7 +139,15 @@ function PipeIO:read(bufsize, sec)
 
     local reader = self.reader
     local ok, timeout
+
     repeat
+        if deadline then
+            sec = deadline:remain()
+            if sec == 0 then
+                return str, nil, true
+            end
+        end
+
         -- wait until readable
         ok, err, timeout = self:wait_readable(sec)
         if ok then
@@ -123,6 +165,9 @@ end
 --- @return any err
 --- @return boolean? timeout
 function PipeIO:write(str, sec)
+    assert(sec == nil or is_finite(sec), 'sec must be finite number or nil')
+
+    local deadline = sec and new_deadline(sec)
     local len, err, again = self.writer:write(str)
     if not again then
         return len, err
@@ -131,21 +176,31 @@ function PipeIO:write(str, sec)
     local writer = self.writer
     local total = 0
     local ok, timeout
-    repeat
+    while true do
         total = total + len
         -- eliminate write data
         if len > 0 then
             str = sub(str, len + 1)
         end
 
+        if deadline then
+            sec = deadline:remain()
+            if sec == 0 then
+                return total, nil, true
+            end
+        end
+
         -- wait until writable
         ok, err, timeout = self:wait_writable(sec)
-        if ok then
-            len, err, again = writer:write(str)
+        if not ok then
+            return total, err, timeout
         end
-    until not again or timeout
 
-    return len and total + len, err, timeout
+        len, err, again = writer:write(str)
+        if not again then
+            return len and total + len, err
+        end
+    end
 end
 
 --- closerd
@@ -186,4 +241,3 @@ end
 
 PipeIO = require('metamodule').new(PipeIO)
 return PipeIO
-

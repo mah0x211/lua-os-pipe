@@ -14,6 +14,7 @@ dependencies = {
     "errno >= 0.3.0",
     "gpoll >= 0.7",
     "io-wait >= 0.3",
+    "time-clock >= 0.4",
     "metamodule >= 0.4.0",
 }
 build = {
