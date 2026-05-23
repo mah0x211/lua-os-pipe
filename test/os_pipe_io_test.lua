@@ -1,5 +1,6 @@
 require('luacov')
 local testcase = require('testcase')
+local assert = require('assert')
 local gettime = require('testcase.timer').nanotime
 local errno = require('errno')
 local pipeio = require('os.pipe.io')

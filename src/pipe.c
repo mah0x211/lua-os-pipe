@@ -27,7 +27,10 @@
 #include <unistd.h>
 // lua
 #include <lauxlib.h>
-#include <lua_errno.h>
+#include <lua.h>
+// external libraries
+#include "lauxhlib.h"
+#include "lua_errno.h"
 
 #define PIPE_READER_MT "os.pipe.reader"
 #define PIPE_WRITER_MT "os.pipe.writer"
