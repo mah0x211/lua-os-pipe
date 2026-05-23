@@ -1,3 +1,4 @@
+rockspec_format = "3.0"
 package = "os-pipe"
 version = "scm-1"
 source = {
@@ -14,22 +15,37 @@ dependencies = {
     "errno >= 0.3.0",
     "gpoll >= 0.7",
     "io-wait >= 0.3",
+    "lauxhlib >= 0.6.3",
     "time-clock >= 0.4",
     "metamodule >= 0.4.0",
 }
+build_dependencies = {
+    "luarocks-build-hooks >= 0.7.0",
+}
 build = {
-    type = "make",
-    build_variables = {
-        CFLAGS = "$(CFLAGS)",
-        WARNINGS = "-Wall -Wno-trigraphs -Wmissing-field-initializers -Wreturn-type -Wmissing-braces -Wparentheses -Wno-switch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare",
-        CPPFLAGS = "-I$(LUA_INCDIR)",
-        LDFLAGS = "$(LIBFLAG)",
-        LIB_EXTENSION = "$(LIB_EXTENSION)",
-        PIPE_COVERAGE = "$(PIPE_COVERAGE)",
+    type = "hooks",
+    before_build = {
+        "$(extra-vars)",
     },
-    install_variables = {
-        LIB_EXTENSION = "$(LIB_EXTENSION)",
-        INST_LIBDIR = "$(LIBDIR)/os/",
-        INST_LUADIR = "$(LUADIR)",
+    extra_variables = {
+        CFLAGS = "-Wall -Wno-trigraphs -Wmissing-field-initializers -Wreturn-type -Wmissing-braces -Wparentheses -Wno-switch -Wunused-function -Wunused-label -Wunused-parameter -Wunused-variable -Wunused-value -Wuninitialized -Wunknown-pragmas -Wshadow -Wsign-compare",
+    },
+    conditional_variables = {
+        OS_PIPE_COVERAGE = {
+            CFLAGS = "--coverage",
+            LIBFLAG = "--coverage",
+        },
+    },
+    modules = {
+        ["os.pipe"] = {
+            sources = {
+                "src/pipe.c",
+            },
+            incdirs = {
+                "$(DEP_ERRNO_INCDIR)",
+                "$(DEP_LAUXHLIB_INCDIR)",
+            },
+        },
+        ["os.pipe.io"] = "lib/io.lua",
     },
 }
