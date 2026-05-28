@@ -19,18 +19,15 @@
  *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  *  DEALINGS IN THE SOFTWARE.
  */
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-// lua
-#include <lauxlib.h>
-#include <lua.h>
-// external libraries
+// depend
 #include "lauxhlib.h"
 #include "lua_errno.h"
+// lua
+#include <lauxlib.h>
+// system
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #define PIPE_READER_MT "os.pipe.reader"
 #define PIPE_WRITER_MT "os.pipe.writer"
